@@ -104,6 +104,8 @@ public:
 
     void handleNativeDragEvent(IInspectable *sender, ABI::Windows::UI::Xaml::IDragEventArgs *e, bool drop = false);
 private:
+    Qt::DropAction finished(Qt::DropAction action);
+
     Microsoft::WRL::ComPtr<ABI::Windows::UI::Xaml::IUIElement> m_ui;
     QWindow *m_dragTarget;
     QtDragEventHandlerEnter *m_enter;

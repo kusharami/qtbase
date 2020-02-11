@@ -49,6 +49,7 @@ class QWasmEventTranslator : public QObject
 public:
 
     explicit QWasmEventTranslator(QWasmScreen *screen);
+    virtual ~QWasmEventTranslator() override;
 
     static int keyboard_cb(int eventType, const EmscriptenKeyboardEvent *keyEvent, void *userData);
     static int mouse_cb(int eventType, const EmscriptenMouseEvent *mouseEvent, void *userData);
@@ -58,77 +59,54 @@ public:
     static int touchCallback(int eventType, const EmscriptenTouchEvent *ev, void *userData);
 
     void processEvents();
+
+private:
+    friend class QWasmWindow;
+    static void releaseIfCapturedWindow(QWasmWindow* window);
+    static void releaseCapturedWindow();
+
     void initEventHandlers();
-    int handleTouch(int eventType, const EmscriptenTouchEvent *touchEvent);
-
-Q_SIGNALS:
-    void getWindowAt(const QPoint &point, QWindow **window);
-private:
     QWasmScreen *screen();
-    Qt::Key translateEmscriptKey(const EmscriptenKeyboardEvent *emscriptKey);
+    static Qt::Key translateEmscriptKey(const EmscriptenKeyboardEvent *emscriptKey);
     template <typename Event>
-    QFlags<Qt::KeyboardModifier> translatKeyModifier(const Event *event);
-    QFlags<Qt::KeyboardModifier> translateKeyboardEventModifier(const EmscriptenKeyboardEvent *keyEvent);
-    QFlags<Qt::KeyboardModifier> translateMouseEventModifier(const EmscriptenMouseEvent *mouseEvent);
-    Qt::MouseButton translateMouseButton(unsigned short button);
+    static QFlags<Qt::KeyboardModifier> translatKeyModifier(const Event *event);
+    static QFlags<Qt::KeyboardModifier> translateKeyboardEventModifier(const EmscriptenKeyboardEvent *keyEvent);
+    static QFlags<Qt::KeyboardModifier> translateMouseEventModifier(const EmscriptenMouseEvent *mouseEvent);
+    static Qt::MouseButton translateMouseButton(unsigned short button);
 
-    void processMouse(int eventType, const EmscriptenMouseEvent *mouseEvent);
-    bool processKeyboard(int eventType, const EmscriptenKeyboardEvent *keyEvent);
+    static bool processKeyboard(int eventType, const EmscriptenKeyboardEvent *keyEvent);
+    static Qt::Key translateDeadKey(Qt::Key deadKey, Qt::Key accentBaseKey);
 
-    Qt::Key translateDeadKey(Qt::Key deadKey, Qt::Key accentBaseKey);
+    bool processMouseEnter(const EmscriptenMouseEvent *mouseEvent);
+    bool processMouseLeave();
+    bool processMouse(int eventType, const EmscriptenMouseEvent *mouseEvent);
+    bool handleTouch(int eventType, const EmscriptenTouchEvent *touchEvent);
 
-    QHash<Qt::Key , Qt::Key> tildeKeyTable { // ~
-        { Qt::Key_A, Qt::Key_Atilde},
-        { Qt::Key_N, Qt::Key_Ntilde},
-        { Qt::Key_O, Qt::Key_Otilde}
-     };
-    QHash<Qt::Key , Qt::Key> graveKeyTable { // `
-        { Qt::Key_A, Qt::Key_Agrave},
-        { Qt::Key_E, Qt::Key_Egrave},
-        { Qt::Key_I, Qt::Key_Igrave},
-        { Qt::Key_O, Qt::Key_Ograve},
-        { Qt::Key_U, Qt::Key_Ugrave}
-     };
-    QHash<Qt::Key , Qt::Key> acuteKeyTable { // '
-        { Qt::Key_A, Qt::Key_Aacute},
-        { Qt::Key_E, Qt::Key_Eacute},
-        { Qt::Key_I, Qt::Key_Iacute},
-        { Qt::Key_O, Qt::Key_Oacute},
-        { Qt::Key_U, Qt::Key_Uacute},
-        { Qt::Key_Y, Qt::Key_Yacute}
-     };
-    QHash<Qt::Key , Qt::Key> diaeresisKeyTable { // umlaut ¨
-        { Qt::Key_A, Qt::Key_Adiaeresis},
-        { Qt::Key_E, Qt::Key_Ediaeresis},
-        { Qt::Key_I, Qt::Key_Idiaeresis},
-        { Qt::Key_O, Qt::Key_Odiaeresis},
-        { Qt::Key_U, Qt::Key_Udiaeresis},
-        { Qt::Key_Y, Qt::Key_ydiaeresis}
-     };
-    QHash<Qt::Key , Qt::Key> circumflexKeyTable { // ^
-        { Qt::Key_A, Qt::Key_Acircumflex},
-        { Qt::Key_E, Qt::Key_Ecircumflex},
-        { Qt::Key_I, Qt::Key_Icircumflex},
-        { Qt::Key_O, Qt::Key_Ocircumflex},
-        { Qt::Key_U, Qt::Key_Ucircumflex}
-     };
+    void ensureWindowCaptured(QWindow* window);
+    static void maybeReleaseCapturedWindow();
+    static void enterWindow(QWindow* window, const QPoint &localPoint, const QPoint &globalPoint);
+    static void leaveWindow(QWindow* window);
 
-    QMap <int, QPointF> pressedTouchIds;
+    static quint64 getTimestamp();
 
 private:
-    QWindow *draggedWindow;
-    QWindow *pressedWindow;
-    QWindow *lastWindow;
-    Qt::MouseButtons pressedButtons;
+    static QMap <int, QPointF> pressedTouchIds;
+    static QWasmEventTranslator *capturedTranslator;
+    static QWindow *capturedWindow;
+    static QWasmEventTranslator *mouseInTranslator;
+    static QPointer<QWindow> mouseInWindow;
+    static QPointer<QWindow> lastMouseInWindow;
+    static QPointer<QWindow> draggedWindow;
+    static Qt::MouseButtons pressedButtons;
 
-    QWasmWindow::ResizeMode resizeMode;
-    QPoint resizePoint;
-    QRect resizeStartRect;
-    QTouchDevice *touchDevice;
-    quint64 getTimestamp();
+    static QWasmWindow::ResizeMode resizeMode;
+    static QPoint resizePoint;
+    static QPoint lastMousePoint;
+    static QRect resizeStartRect;
+    static QTouchDevice *touchDevice;
 
-    Qt::Key m_emDeadKey = Qt::Key_unknown;
-    bool m_emStickyDeadKey = false;
+    static Qt::Key m_emDeadKey;
+    static bool m_emStickyDeadKey;
 };
 
 QT_END_NAMESPACE

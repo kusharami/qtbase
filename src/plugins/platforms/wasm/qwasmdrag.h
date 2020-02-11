@@ -1,6 +1,6 @@
 /****************************************************************************
 **
-** Copyright (C) 2018 The Qt Company Ltd.
+** Copyright (C) 2020 The Qt Company Ltd.
 ** Contact: https://www.qt.io/licensing/
 **
 ** This file is part of the plugins of the Qt Toolkit.
@@ -27,21 +27,28 @@
 **
 ****************************************************************************/
 
-#include "qwasmservices.h"
-#include "qwasmstring.h"
+#include <QtGui/private/qsimpledrag_p.h>
 
-#include <QtCore/QUrl>
-#include <QtCore/QDebug>
-
-#include <emscripten/val.h>
+QT_REQUIRE_CONFIG(draganddrop);
 
 QT_BEGIN_NAMESPACE
 
-bool QWasmServices::openUrl(const QUrl &url)
+class QWasmDrag : public QBasicDrag
 {
-    emscripten::val jsUrl = QWasmString::fromQString(url.toString());
-    emscripten::val::global("window").call<void>("open", jsUrl, emscripten::val("_blank"));
-    return true;
-}
+public:
+    virtual ~QWasmDrag() override;
+
+    virtual Qt::DropAction drag(QDrag *drag) override;
+    virtual void cancelDrag() override;
+    virtual bool ownsDragObject() const override;
+    virtual bool eventFilter(QObject *o, QEvent *e) override;
+
+protected:
+    virtual void startDrag() override;
+    virtual void endDrag() override;
+    virtual void cancel() override;
+    virtual void move(const QPoint &globalPos, Qt::MouseButtons b, Qt::KeyboardModifiers mods) override;
+    virtual void drop(const QPoint &globalPos, Qt::MouseButtons b, Qt::KeyboardModifiers mods) override;
+};
 
 QT_END_NAMESPACE

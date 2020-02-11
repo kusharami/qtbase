@@ -324,9 +324,12 @@ void QLineEditPrivate::drag()
     data->setText(control->selectedText());
     QDrag *drag = new QDrag(q);
     drag->setMimeData(data);
-    Qt::DropAction action = drag->exec(Qt::CopyAction);
-    if (action == Qt::MoveAction && !control->isReadOnly() && drag->target() != q)
-        control->removeSelection();
+    auto finished = [this, drag, q](Qt::DropAction action) {
+        if (action == Qt::MoveAction && !control->isReadOnly() && drag->target() != q)
+            control->removeSelection();
+    };
+    QObject::connect(drag, &QDrag::finished, q, finished);
+    drag->exec(Qt::CopyAction);
 }
 #endif // QT_CONFIG(draganddrop)
 

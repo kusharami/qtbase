@@ -81,6 +81,8 @@ public:
     Qt::DropAction exec(Qt::DropActions supportedActions = Qt::MoveAction);
     Qt::DropAction exec(Qt::DropActions supportedActions, Qt::DropAction defaultAction);
 
+    bool isRunning() const;
+
     void setDragCursor(const QPixmap &cursor, Qt::DropAction action);
     QPixmap dragCursor(Qt::DropAction action) const;
 
@@ -92,6 +94,7 @@ public:
 Q_SIGNALS:
     void actionChanged(Qt::DropAction action);
     void targetChanged(QObject *newTarget);
+    void finished(Qt::DropAction action);
 
 private:
     friend class QDragManager;

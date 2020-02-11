@@ -59,7 +59,6 @@ QWasmCompositedWindow::QWasmCompositedWindow()
 
 QWasmCompositor::QWasmCompositor(QWasmScreen *screen)
     :QObject(screen)
-    , m_frameBuffer(nullptr)
     , m_blitter(new QOpenGLTextureBlitter)
     , m_needComposit(false)
     , m_inFlush(false)
@@ -71,7 +70,6 @@ QWasmCompositor::QWasmCompositor(QWasmScreen *screen)
 
 QWasmCompositor::~QWasmCompositor()
 {
-    delete m_frameBuffer;
     destroy();
 }
 
@@ -113,6 +111,10 @@ void QWasmCompositor::addWindow(QWasmWindow *window, QWasmWindow *parentWindow)
     else
         m_compositedWindows[parentWindow].childWindows.append(window);
 
+    if (!QGuiApplication::focusWindow()) {
+        window->requestActivateWindow();
+    }
+
     notifyTopWindowChanged(window);
 }
 
@@ -127,6 +129,11 @@ void QWasmCompositor::removeWindow(QWasmWindow *window)
 
     m_windowStack.removeAll(window);
     m_compositedWindows.remove(window);
+
+    if (!m_windowStack.isEmpty() && !QGuiApplication::focusWindow()) {
+        auto lastWindow = m_windowStack.last();
+        lastWindow->requestActivateWindow();
+    }
 
     notifyTopWindowChanged(window);
 }
@@ -395,10 +402,11 @@ QWasmCompositor::QWasmTitleBarOptions QWasmCompositor::makeTitleBarOptions(const
 
     titleBarOptions.palette = QWasmCompositor::makeWindowPalette();
 
-    if (window->window()->isActive())
-        titleBarOptions.palette.setCurrentColorGroup(QPalette::Active);
-    else
+    if (QGuiApplication::focusWindow() == window->window()) {
+        titleBarOptions.palette.setCurrentColorGroup(QPalette::Active);}
+    else {
         titleBarOptions.palette.setCurrentColorGroup(QPalette::Inactive);
+    }
 
     if (window->activeSubControl() != QWasmCompositor::SC_None)
         titleBarOptions.subControls = window->activeSubControl();
@@ -681,7 +689,7 @@ void QWasmCompositor::frame()
 
     QWasmWindow *someWindow = nullptr;
 
-    foreach (QWasmWindow *window, m_windowStack) {
+    for (QWasmWindow *window : qAsConst(m_windowStack)) {
         if (window->window()->surfaceClass() == QSurface::Window
                 && qt_window_private(static_cast<QWindow *>(window->window()))->receivedExpose) {
             someWindow = window;
@@ -715,7 +723,7 @@ void QWasmCompositor::frame()
     m_blitter->bind();
     m_blitter->setRedBlueSwizzle(true);
 
-    foreach (QWasmWindow *window, m_windowStack) {
+    for (QWasmWindow *window : qAsConst(m_windowStack)) {
         QWasmCompositedWindow &compositedWindow = m_compositedWindows[window];
 
         if (!compositedWindow.visible)
@@ -736,15 +744,20 @@ void QWasmCompositor::notifyTopWindowChanged(QWasmWindow *window)
     bool blocked = QGuiApplicationPrivate::instance()->isWindowBlocked(window->window(), &modalWindow);
 
     if (blocked) {
+        modalWindow->requestActivate();
         raise(static_cast<QWasmWindow*>(modalWindow->handle()));
         return;
     }
 
     requestRedraw();
-    QWindowSystemInterface::handleWindowActivated(window->window());
 }
 
 QWasmScreen *QWasmCompositor::screen()
 {
     return static_cast<QWasmScreen *>(parent());
+}
+
+QOpenGLContext *QWasmCompositor::context()
+{
+    return m_context.data();
 }

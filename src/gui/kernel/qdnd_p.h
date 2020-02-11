@@ -73,9 +73,10 @@ class QDragPrivate : public QObjectPrivate
 {
 public:
     QDragPrivate()
-        : source(0)
-        , target(0)
-        , data(0)
+        : source(nullptr)
+        , target(nullptr)
+        , data(nullptr)
+        , is_running(false)
     { }
     QObject *source;
     QObject *target;
@@ -85,6 +86,7 @@ public:
     Qt::DropAction executed_action;
     Qt::DropActions supported_actions;
     Qt::DropAction default_action;
+    bool is_running;
     QMap<Qt::DropAction, QPixmap> customCursors;
 };
 
@@ -101,13 +103,15 @@ public:
     void setCurrentTarget(QObject *target, bool dropped = false);
     QObject *currentTarget() const;
 
-    QDrag *object() const { return m_object; }
+    QPointer<QDrag> object() const { return m_object; }
     QObject *source() const;
+
+    void finishDrag(Qt::DropAction action);
 
 private:
     QObject *m_currentDropTarget;
     QPlatformDrag *m_platformDrag;
-    QDrag *m_object;
+    QPointer<QDrag> m_object;
 
     static QDragManager *m_instance;
     Q_DISABLE_COPY_MOVE(QDragManager)

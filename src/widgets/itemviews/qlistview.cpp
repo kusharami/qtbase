@@ -2833,12 +2833,15 @@ bool QIconModeViewBase::filterStartDrag(Qt::DropActions supportedActions)
         drag->setMimeData(dd->model->mimeData(indexes));
         drag->setPixmap(pixmap);
         drag->setHotSpot(dd->pressedPosition - rect.topLeft());
-        Qt::DropAction action = drag->exec(supportedActions, dd->defaultDropAction);
-        draggedItems.clear();
-        // for internal moves the action was set to Qt::CopyAction in
-        // filterDropEvent() to avoid the deletion here
-        if (action == Qt::MoveAction)
-            dd->clearOrRemove();
+        auto finished = [this](Qt::DropAction action) {
+            draggedItems.clear();
+            // for internal moves the action was set to Qt::CopyAction in
+            // filterDropEvent() to avoid the deletion here
+            if (action == Qt::MoveAction)
+                dd->clearOrRemove();
+        };
+        QObject::connect(drag, &QDrag::finished, qq, finished);
+        drag->exec(supportedActions, dd->defaultDropAction);
     }
     return true;
 }

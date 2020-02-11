@@ -535,16 +535,17 @@ void QWidgetTextControlPrivate::startDrag()
     drag->setMimeData(data);
 
     Qt::DropActions actions = Qt::CopyAction;
-    Qt::DropAction action;
+    auto finished = [this, drag](Qt::DropAction action) {
+        if (action == Qt::MoveAction && drag->target() != contextWidget)
+            cursor.removeSelectedText();
+    };
+    QObject::connect(drag, &QDrag::finished, contextWidget, finished);
     if (interactionFlags & Qt::TextEditable) {
         actions |= Qt::MoveAction;
-        action = drag->exec(actions, Qt::MoveAction);
+        drag->exec(actions, Qt::MoveAction);
     } else {
-        action = drag->exec(actions, Qt::CopyAction);
+        drag->exec(actions, Qt::CopyAction);
     }
-
-    if (action == Qt::MoveAction && drag->target() != contextWidget)
-        cursor.removeSelectedText();
 #endif
 }
 

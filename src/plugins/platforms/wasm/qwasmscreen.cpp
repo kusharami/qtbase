@@ -32,6 +32,8 @@
 #include "qwasmeventtranslator.h"
 #include "qwasmcompositor.h"
 #include "qwasmintegration.h"
+#include "qwasmstring.h"
+
 #include <emscripten/bind.h>
 #include <emscripten/val.h>
 
@@ -44,6 +46,7 @@
 #include <QtGui/qguiapplication.h>
 #include <private/qhighdpiscaling_p.h>
 
+using namespace emscripten;
 
 QT_BEGIN_NAMESPACE
 
@@ -161,9 +164,13 @@ void QWasmScreen::invalidateSize()
 
 void QWasmScreen::setGeometry(const QRect &rect)
 {
+    if (m_geometry == rect)
+        return;
+
     m_geometry = rect;
     QWindowSystemInterface::handleScreenGeometryChange(QPlatformScreen::screen(), geometry(), availableGeometry());
     resizeMaximizedWindows();
+    m_compositor->redrawWindowContent();
 }
 
 void QWasmScreen::updateQScreenAndCanvasRenderSize()
@@ -182,7 +189,9 @@ void QWasmScreen::updateQScreenAndCanvasRenderSize()
     QSizeF cssSize(css_width, css_height);
 
     QSizeF canvasSize = cssSize * devicePixelRatio();
-    emscripten::val canvas = emscripten::val::global(canvasId.constData());
+    val document = val::global("document");
+    val canvas = document.call<val>("getElementById", QWasmString::fromQString(m_canvasId));
+
     canvas.set("width", canvasSize.width());
     canvas.set("height", canvasSize.height());
 
@@ -190,7 +199,6 @@ void QWasmScreen::updateQScreenAndCanvasRenderSize()
     QPoint position(rect["left"].as<int>(), rect["top"].as<int>());
 
     setGeometry(QRect(position, cssSize.toSize()));
-    m_compositor->redrawWindowContent();
 }
 
 QT_END_NAMESPACE

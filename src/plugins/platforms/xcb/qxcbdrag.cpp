@@ -208,12 +208,12 @@ void QXcbDrag::startDrag()
 
 void QXcbDrag::endDrag()
 {
-    QBasicDrag::endDrag();
     if (!dropped && !canceled && canDrop()) {
         // Set executed drop action when dropping outside application.
         setExecutedDropAction(accepted_drop_action);
     }
     initiatorWindow.clear();
+    QBasicDrag::endDrag();
 }
 
 static

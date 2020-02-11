@@ -21,7 +21,9 @@ SOURCES = \
     qwasmtheme.cpp \
     qwasmclipboard.cpp \
     qwasmservices.cpp \
-    qwasmoffscreensurface.cpp
+    qwasmoffscreensurface.cpp \
+    qwasmstring.cpp \
+    qwasmdrag.cpp
 
 HEADERS = \
     qwasmintegration.h \
@@ -37,7 +39,9 @@ HEADERS = \
     qwasmtheme.h \
     qwasmclipboard.h \
     qwasmservices.h \
-    qwasmoffscreensurface.h
+    qwasmoffscreensurface.h \
+    qwasmstring.h \
+    qwasmdrag.h
 
 wasmfonts.files = \
     ../../../3rdparty/wasm/Vera.ttf \

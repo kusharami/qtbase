@@ -37,6 +37,7 @@
 #include "qwasmscreen.h"
 #include "qwasmcompositor.h"
 #include "qwasmeventdispatcher.h"
+#include "qwasmeventtranslator.h"
 
 #include <iostream>
 
@@ -62,11 +63,14 @@ QWasmWindow::QWasmWindow(QWindow *w, QWasmCompositor *compositor, QWasmBackingSt
 
 QWasmWindow::~QWasmWindow()
 {
+    destroy();
     m_compositor->removeWindow(this);
 }
 
 void QWasmWindow::destroy()
 {
+    QWasmEventTranslator::releaseIfCapturedWindow(this);
+
     if (m_backingStore)
         m_backingStore->destroy();
 }
@@ -259,7 +263,7 @@ QRegion QWasmWindow::resizeRegion() const
 
 bool QWasmWindow::isPointOnTitle(QPoint point) const
 {
-    bool ok = titleGeometry().contains(point);
+    bool ok = hasTitleBar() && titleGeometry().contains(point);
     return ok;
 }
 
@@ -402,7 +406,11 @@ void QWasmWindow::requestUpdate()
 
 bool QWasmWindow::hasTitleBar() const
 {
-    return !(m_windowState & Qt::WindowFullScreen) && (window()->flags().testFlag(Qt::WindowTitleHint) && m_needsCompositor);
+    auto flags = window()->flags();
+    return !(m_windowState & Qt::WindowFullScreen)
+        && !flags.testFlag(Qt::ToolTip)
+        && flags.testFlag(Qt::WindowTitleHint)
+        && m_needsCompositor;
 }
 
 QT_END_NAMESPACE
