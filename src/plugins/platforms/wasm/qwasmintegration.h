@@ -77,6 +77,7 @@ public:
     QPlatformClipboard *clipboard() const override;
     void initialize() override;
     QPlatformInputContext *inputContext() const override;
+    QPlatformDrag *drag() const override;
 
     QWasmClipboard *getWasmClipboard() { return m_clipboard; }
 
@@ -88,6 +89,7 @@ public:
     void resizeScreen(const QString &canvasId);
     void resizeAllScreens();
     void updateDpi();
+    void removeBackingStore(QWindow* window);
 
 private:
     mutable QWasmFontDatabase *m_fontDb;

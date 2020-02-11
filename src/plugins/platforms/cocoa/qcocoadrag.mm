@@ -157,6 +157,7 @@ Qt::DropAction QCocoaDrag::drag(QDrag *o)
 
     [nsimage release];
 
+    QDragManager::self()->finishDrag(m_executed_drop_action);
     m_drag = nullptr;
     return m_executed_drop_action;
 }

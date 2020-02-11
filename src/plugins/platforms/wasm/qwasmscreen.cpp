@@ -164,9 +164,13 @@ void QWasmScreen::invalidateSize()
 
 void QWasmScreen::setGeometry(const QRect &rect)
 {
+    if (m_geometry == rect)
+        return;
+
     m_geometry = rect;
     QWindowSystemInterface::handleScreenGeometryChange(QPlatformScreen::screen(), geometry(), availableGeometry());
     resizeMaximizedWindows();
+    m_compositor->redrawWindowContent();
 }
 
 void QWasmScreen::updateQScreenAndCanvasRenderSize()
@@ -199,7 +203,6 @@ void QWasmScreen::updateQScreenAndCanvasRenderSize()
     QPoint position(rect["left"].as<int>() - offset.x(), rect["top"].as<int>() - offset.y());
 
     setGeometry(QRect(position, cssSize.toSize()));
-    m_compositor->redrawWindowContent();
 }
 
 QT_END_NAMESPACE

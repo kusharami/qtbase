@@ -1531,6 +1531,7 @@ void QCoreApplication::postEvent(QObject *receiver, QEvent *event, int priority)
     Q_TRACE_SCOPE(QCoreApplication_postEvent, receiver, event, event->type());
 
     if (receiver == 0) {
+        qDebug() << QEvent::Type(event->type());
         qWarning("QCoreApplication::postEvent: Unexpected null receiver");
         delete event;
         return;

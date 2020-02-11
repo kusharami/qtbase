@@ -7,8 +7,6 @@ QT += \
 # Avoid X11 header collision, use generic EGL native types
 DEFINES += QT_EGL_NO_X11
 
-DEFINES += QT_NO_FOREACH
-
 SOURCES = \
     main.cpp \
     qwasmintegration.cpp \
@@ -24,7 +22,8 @@ SOURCES = \
     qwasmclipboard.cpp \
     qwasmservices.cpp \
     qwasmoffscreensurface.cpp \
-    qwasmstring.cpp
+    qwasmstring.cpp \
+    qwasmdrag.cpp
 
 HEADERS = \
     qwasmintegration.h \
@@ -41,7 +40,8 @@ HEADERS = \
     qwasmclipboard.h \
     qwasmservices.h \
     qwasmoffscreensurface.h \
-    qwasmstring.h
+    qwasmstring.h \
+    qwasmdrag.h
 
 wasmfonts.files = \
     ../../../3rdparty/wasm/Vera.ttf \

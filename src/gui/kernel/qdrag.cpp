@@ -227,10 +227,13 @@ QObject *QDrag::target() const
     \b{Note:} On Linux and \macos, the drag and drop operation
     can take some time, but this function does not block the event
     loop. Other events are still delivered to the application while
-    the operation is performed. On Windows, the Qt event loop is
-    blocked during the operation.
+    the operation is performed.
+    On Windows, the Qt event loop is blocked during the operation.
+    On WebAssembly this function returns immediately.
+    You can check if drag and drop operation is still running with isRunning().
+    To know when operation is finished or cancelled you can connect to finished() signal.
 
-    \sa cancel()
+    \sa cancel(), isRunning(), finished()
 */
 
 Qt::DropAction QDrag::exec(Qt::DropActions supportedActions)
@@ -255,6 +258,11 @@ Qt::DropAction QDrag::exec(Qt::DropActions supportedActions)
     blocked during the operation. However, QDrag::exec() on
     Windows causes processEvents() to be called frequently to keep the GUI responsive.
     If any loops or operations are called while a drag operation is active, it will block the drag operation.
+    On WebAssembly this function returns immediately.
+    You can check if drag and drop operation is still running with isRunning().
+    To know when operation is finished or cancelled you can connect to finished() signal.
+
+    \sa cancel(), isRunning(), finished()
 */
 
 Qt::DropAction QDrag::exec(Qt::DropActions supportedActions, Qt::DropAction defaultDropAction)
@@ -285,6 +293,17 @@ Qt::DropAction QDrag::exec(Qt::DropActions supportedActions, Qt::DropAction defa
         return Qt::IgnoreAction;
     d->executed_action = executed_action;
     return d->executed_action;
+}
+
+/*!
+    \since 5.15
+
+    Returns true while drag and drop operation is running.
+*/
+
+bool QDrag::isRunning() const
+{
+    return d_func()->is_running;
 }
 
 #if QT_DEPRECATED_SINCE(5, 13)
@@ -420,6 +439,14 @@ void QDrag::cancel()
     operation changes, with \a newTarget the new target.
 
     \sa target(), actionChanged()
+*/
+
+/*!
+    \fn void QDrag::finished(Qt::DropAction action)
+
+    This signal is emitted when drag finished or cancelled.
+
+    \since 5.15
 */
 
 QT_END_NAMESPACE

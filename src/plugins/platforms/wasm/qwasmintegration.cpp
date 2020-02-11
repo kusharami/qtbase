@@ -37,6 +37,7 @@
 #include "qwasmservices.h"
 #include "qwasmoffscreensurface.h"
 #include "qwasmstring.h"
+#include "qwasmdrag.h"
 
 #include "qwasmwindow.h"
 #ifndef QT_NO_OPENGL
@@ -192,6 +193,11 @@ QPlatformBackingStore *QWasmIntegration::createPlatformBackingStore(QWindow *win
 #endif
 }
 
+void QWasmIntegration::removeBackingStore(QWindow* window)
+{
+    m_backingStores.remove(window);
+}
+
 #ifndef QT_NO_OPENGL
 QPlatformOpenGLContext *QWasmIntegration::createPlatformOpenGLContext(QOpenGLContext *context) const
 {
@@ -232,7 +238,8 @@ QAbstractEventDispatcher *QWasmIntegration::createEventDispatcher() const
 QVariant QWasmIntegration::styleHint(QPlatformIntegration::StyleHint hint) const
 {
     if (hint == ShowIsFullScreen)
-        return true;
+        return false;   // `true` is causing another window activation
+                        // when showing child widgets
 
     return QPlatformIntegration::styleHint(hint);
 }
@@ -305,6 +312,16 @@ void QWasmIntegration::resizeAllScreens()
     qDebug() << "resizeAllScreens";
     for (QWasmScreen *screen : m_screens)
         screen->updateQScreenAndCanvasRenderSize();
+}
+
+QPlatformDrag *QWasmIntegration::drag() const
+{
+    static QScopedPointer<QWasmDrag> wasmDrag;
+    if (!wasmDrag)
+    {
+        wasmDrag.reset(new QWasmDrag);
+    }
+    return wasmDrag.data();
 }
 
 QT_END_NAMESPACE

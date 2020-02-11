@@ -97,7 +97,7 @@ QObject *QDragManager::currentTarget() const
 Qt::DropAction QDragManager::drag(QDrag *o)
 {
     if (!o || m_object == o)
-         return Qt::IgnoreAction;
+        return Qt::IgnoreAction;
 
     if (!m_platformDrag || !o->source()) {
         o->deleteLater();
@@ -106,6 +106,7 @@ Qt::DropAction QDragManager::drag(QDrag *o)
 
     if (m_object) {
         qWarning("QDragManager::drag in possibly invalid state");
+        o->deleteLater();
         return Qt::IgnoreAction;
     }
 
@@ -113,13 +114,21 @@ Qt::DropAction QDragManager::drag(QDrag *o)
 
     m_object->d_func()->target = 0;
 
-    QGuiApplicationPrivate::instance()->notifyDragStarted(m_object.data());
-    const Qt::DropAction result = m_platformDrag->drag(m_object);
-    if (!m_object.isNull() && !m_platformDrag->ownsDragObject())
-        m_object->deleteLater();
+    m_object->d_func()->is_running = true;
 
-    m_object.clear();
-    return result;
+    QGuiApplicationPrivate::instance()->notifyDragStarted(m_object.data());
+    return m_platformDrag->drag(m_object);
+}
+
+void QDragManager::finishDrag(Qt::DropAction action)
+{
+    if (m_object) {
+        m_object->d_func()->is_running = false;
+        m_object->finished(action);
+        if (!m_platformDrag->ownsDragObject())
+            m_object->deleteLater();
+        m_object.clear();
+    }
 }
 
 QT_END_NAMESPACE

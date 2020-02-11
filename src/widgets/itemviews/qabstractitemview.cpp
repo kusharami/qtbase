@@ -1840,8 +1840,6 @@ void QAbstractItemView::mouseMoveEvent(QMouseEvent *event)
         if ((topLeft - bottomRight).manhattanLength() > QApplication::startDragDistance()) {
             d->pressedIndex = QModelIndex();
             startDrag(d->model->supportedDragActions());
-            setState(NoState); // the startDrag will return when the dnd operation is done
-            stopAutoScroll();
         }
         return;
     }
@@ -3709,11 +3707,22 @@ void QAbstractItemView::startDrag(Qt::DropActions supportedActions)
             defaultDropAction = d->defaultDropAction;
         else if (supportedActions & Qt::CopyAction && dragDropMode() != QAbstractItemView::InternalMove)
             defaultDropAction = Qt::CopyAction;
-        if (drag->exec(supportedActions, defaultDropAction) == Qt::MoveAction)
-            d->clearOrRemove();
-        // Reset the drop indicator
-        d->dropIndicatorRect = QRect();
-        d->dropIndicatorPosition = OnItem;
+
+        auto finished = [this, d](Qt::DropAction action) {
+            if (action == Qt::MoveAction)
+                d->clearOrRemove();
+            // Reset the drop indicator
+            d->dropIndicatorRect = QRect();
+            d->dropIndicatorPosition = OnItem;
+            setState(NoState);
+            stopAutoScroll();
+        };
+
+        connect(drag, &QDrag::finished, this, finished);
+        drag->exec(supportedActions, defaultDropAction);
+    } else {
+        setState(NoState); // the startDrag will return when the dnd operation is done
+        stopAutoScroll();
     }
 }
 #endif // QT_CONFIG(draganddrop)

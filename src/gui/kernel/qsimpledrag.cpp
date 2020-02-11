@@ -206,7 +206,6 @@ Qt::DropAction QBasicDrag::drag(QDrag *o)
     m_eventLoop->exec();
     delete m_eventLoop;
     m_eventLoop = nullptr;
-    m_drag = nullptr;
     endDrag();
 
     return m_executed_drop_action;
@@ -236,6 +235,10 @@ void QBasicDrag::startDrag()
 
 void QBasicDrag::endDrag()
 {
+    if (m_drag) {
+        QDragManager::self()->finishDrag(m_executed_drop_action);
+        m_drag = nullptr;
+    }
 }
 
 void QBasicDrag::recreateShapedPixmapWindow(QScreen *screen, const QPoint &pos)

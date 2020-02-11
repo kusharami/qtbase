@@ -598,7 +598,7 @@ Qt::DropAction QWinRTDrag::drag(QDrag *drag)
 
     if (!qt_winrt_lastPointerPoint) {
         Q_ASSERT_X(qt_winrt_lastPointerPoint, Q_FUNC_INFO, "No pointerpoint known");
-        return Qt::IgnoreAction;
+        return finished(Qt::IgnoreAction);
     }
 
     ComPtr<IUIElement3> elem3;
@@ -733,7 +733,7 @@ Qt::DropAction QWinRTDrag::drag(QDrag *drag)
         qCDebug(lcQpaMime) << "Drag failed:" << hr;
         hr = resetUiElementDrag(elem3, startingToken);
         Q_ASSERT_SUCCEEDED(hr);
-        return Qt::IgnoreAction;
+        return finished(Qt::IgnoreAction);
     }
 
     DataPackageOperation nativeOperationType;
@@ -761,7 +761,7 @@ Qt::DropAction QWinRTDrag::drag(QDrag *drag)
         break;
     }
 
-    return resultAction;
+    return finished(resultAction);
 }
 
 void QWinRTDrag::setDropTarget(QWindow *target)
@@ -786,6 +786,12 @@ void QWinRTDrag::setUiElement(ComPtr<ABI::Windows::UI::Xaml::IUIElement> &elemen
     RETURN_VOID_IF_FAILED("Failed to add DragLeave handler.");
     hr = element->add_Drop(m_drop, &tok);
     RETURN_VOID_IF_FAILED("Failed to add Drop handler.");
+}
+
+Qt::DropAction QWinRTDrag::finished(Qt::DropAction action)
+{
+    QDragManager::self()->finishDrag(action);
+    return action;
 }
 
 void QWinRTDrag::handleNativeDragEvent(IInspectable *sender, ABI::Windows::UI::Xaml::IDragEventArgs *e, bool drop)

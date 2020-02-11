@@ -737,6 +737,7 @@ Qt::DropAction QWindowsDrag::drag(QDrag *drag)
     qCDebug(lcQpaMime) << '<' << __FUNCTION__ << Qt::hex << "allowedEffects=0x" << allowedEffects
         << "reportedPerformedEffect=0x" << reportedPerformedEffect
         <<  " resultEffect=0x" << resultEffect << "hr=0x" << int(r) << Qt::dec << "dropAction=" << dragResult;
+    QDragManager::self()->finishDrag(dragResult);
     return dragResult;
 }
 

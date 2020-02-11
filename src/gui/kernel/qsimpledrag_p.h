@@ -74,7 +74,7 @@ public:
     ~QBasicDrag();
 
     virtual Qt::DropAction drag(QDrag *drag) override;
-    void cancelDrag() override;
+    virtual void cancelDrag() override;
 
     virtual bool eventFilter(QObject *o, QEvent *e) override;
 
@@ -110,7 +110,6 @@ protected:
     QWindow *m_sourceWindow = nullptr;
     QPointer<QWindow> m_windowUnderCursor = nullptr;
 
-private:
     void enableEventFilter();
     void disableEventFilter();
     void restoreCursor();

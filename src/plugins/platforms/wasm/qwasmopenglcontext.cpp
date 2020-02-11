@@ -90,7 +90,7 @@ EMSCRIPTEN_WEBGL_CONTEXT_HANDLE QWasmOpenGLContext::createEmscriptenContext(cons
 
     attributes.preferLowPowerToHighPerformance = false;
     attributes.failIfMajorPerformanceCaveat = false;
-    attributes.antialias = true;
+    attributes.antialias = false;
     attributes.enableExtensionsByDefault = true;
 
     if (format.majorVersion() == 3) {

@@ -76,6 +76,7 @@ public:
         : source(nullptr)
         , target(nullptr)
         , data(nullptr)
+        , is_running(false)
     { }
     QObject *source;
     QObject *target;
@@ -85,6 +86,7 @@ public:
     Qt::DropAction executed_action;
     Qt::DropActions supported_actions;
     Qt::DropAction default_action;
+    bool is_running;
     QMap<Qt::DropAction, QPixmap> customCursors;
 };
 
@@ -103,6 +105,8 @@ public:
 
     QPointer<QDrag> object() const { return m_object; }
     QObject *source() const;
+
+    void finishDrag(Qt::DropAction action);
 
 private:
     QObject *m_currentDropTarget;
