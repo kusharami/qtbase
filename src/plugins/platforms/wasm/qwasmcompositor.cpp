@@ -451,7 +451,8 @@ void QWasmCompositor::drawWindowDecorations(QOpenGLTextureBlitter *blitter, QWas
     glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, image.width(), image.height(), GL_RGBA, GL_UNSIGNED_BYTE,
                     image.constScanLine(0));
 
-    blit(blitter, screen, &texture, QRect(window->windowFrameGeometry().topLeft(), QSize(width, height)));
+    QPoint windowCanvasPosition = window->geometry().topLeft() - screen->geometry().topLeft();
+    blit(blitter, screen, &texture, QRect(windowCanvasPosition, QSize(width, height)));
 }
 
 void QWasmCompositor::drawFrameWindow(QWasmFrameOptions options, QPainter *painter)
