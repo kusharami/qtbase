@@ -62,7 +62,7 @@
 using namespace emscripten;
 QT_BEGIN_NAMESPACE
 
-static void browserBeforeUnload(emscripten::val)
+static void browserUnload(emscripten::val)
 {
     QWasmIntegration::QWasmBrowserExit();
 }
@@ -92,7 +92,7 @@ static void qtUpdateDpi()
 
 EMSCRIPTEN_BINDINGS(qtQWasmIntegraton)
 {
-    function("qtBrowserBeforeUnload", &browserBeforeUnload);
+    function("qtBrowserUnload", &browserUnload);
     function("qtAddCanvasElement", &addCanvasElement);
     function("qtRemoveCanvasElement", &removeCanvasElement);
     function("qtResizeCanvasElement", &resizeCanvasElement);
@@ -125,7 +125,7 @@ QWasmIntegration::QWasmIntegration()
         addScreen(canvasId);
     }
 
-    emscripten::val::global("window").set("onbeforeunload", val::module_property("qtBrowserBeforeUnload"));
+    emscripten::val::global("window").set("onunload", val::module_property("qtBrowserUnload"));
 
     // install browser window resize handler
     auto onWindowResize = [](int eventType, const EmscriptenUiEvent *e, void *userData) -> int {
