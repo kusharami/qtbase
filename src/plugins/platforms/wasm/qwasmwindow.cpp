@@ -35,6 +35,7 @@
 
 #include "qwasmwindow.h"
 #include "qwasmscreen.h"
+#include "qwasmstring.h"
 #include "qwasmcompositor.h"
 #include "qwasmeventdispatcher.h"
 #include "qwasmeventtranslator.h"
@@ -99,7 +100,7 @@ void QWasmWindow::initialize()
 
 QWasmScreen *QWasmWindow::platformScreen() const
 {
-    return static_cast<QWasmScreen *>(window()->screen()->handle());
+    return m_compositor->screen();
 }
 
 void QWasmWindow::setGeometry(const QRect &rect)
@@ -402,6 +403,18 @@ void QWasmWindow::requestUpdate()
 
     if (!registered)
         QPlatformWindow::requestUpdate();
+}
+
+void QWasmWindow::requestActivateWindow()
+{
+    if (QGuiApplication::focusWindow() == window())
+        return;
+    
+    QPlatformWindow::requestActivateWindow();
+    using namespace emscripten;
+    val document = val::global("document");
+    val canvas = document.call<val>("getElementById", QWasmString::fromQString(platformScreen()->canvasId()));
+    canvas.call<void>("focus");
 }
 
 bool QWasmWindow::hasTitleBar() const

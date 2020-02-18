@@ -35,8 +35,8 @@
 #include "qwasmstring.h"
 
 #include <QtGui/qevent.h>
+#include <QtGui/qguiapplication.h>
 #include <qpa/qwindowsysteminterface.h>
-#include <QtCore/qcoreapplication.h>
 #include <QtCore/qglobal.h>
 #include <QtCore/qobject.h>
 
@@ -411,15 +411,16 @@ void QWasmEventTranslator::initEventHandlers()
         }
     }
 
-    emscripten_set_mousedown_callback(canvasId, (void *)this, 1, &mouse_cb);
-    emscripten_set_mouseenter_callback(canvasId, (void *)this, 1, &mouse_cb);
-    emscripten_set_mouseleave_callback(canvasId, (void *)this, 1, &mouse_cb);
+    emscripten_set_mousedown_callback(canvasId, (void *)this, 0, &mouse_cb);
+    emscripten_set_mouseenter_callback(canvasId, (void *)this, 0, &mouse_cb);
+    emscripten_set_mouseleave_callback(canvasId, (void *)this, 0, &mouse_cb);
 
-    emscripten_set_focus_callback(canvasId, (void *)this, 1, &focus_cb);
+    emscripten_set_focus_callback(canvasId, (void *)this, 0, &focus_cb);
+    emscripten_set_focusout_callback(canvasId, (void *)this, 0, &focus_cb);
 
-    emscripten_set_wheel_callback(canvasId, (void *)this, 1, &wheel_cb);
+    emscripten_set_wheel_callback(canvasId, (void *)this, 0, &wheel_cb);
 
-    emscripten_set_touchstart_callback(canvasId, (void *)this, 1, &touchCallback);
+    emscripten_set_touchstart_callback(canvasId, (void *)this, 0, &touchCallback);
 
     static bool initOnce = false;
     if (!initOnce)
@@ -477,6 +478,8 @@ QFlags<Qt::KeyboardModifier> QWasmEventTranslator::translateMouseEventModifier(c
 
 int QWasmEventTranslator::keyboard_cb(int eventType, const EmscriptenKeyboardEvent *keyEvent, void *)
 {
+    if (!QGuiApplication::focusWindow())
+        return 0;
     int accepted = processKeyboard(eventType, keyEvent) ? 1 : 0;
     return accepted;
 }
@@ -563,7 +566,7 @@ int QWasmEventTranslator::mouse_cb(int eventType, const EmscriptenMouseEvent *mo
     }
 
     QWasmEventDispatcher::maintainTimers();
-    return accepted ? 1 : 0;
+    return 0;
 }
 
 void resizeWindow(QWindow *window, QWasmWindow::ResizeMode mode,
@@ -687,7 +690,7 @@ void QWasmEventTranslator::ensureWindowCaptured(QWindow *window)
         lastMouseInWindow = mouseInWindow;
         capturedWindow = window;
         capturedTranslator = this;
-        window->requestActivate();
+        QWindowSystemInterface::handleWindowActivated(window);
         if (window->windowState() == Qt::WindowNoState)
             window->raise();
     }
@@ -843,8 +846,19 @@ bool QWasmEventTranslator::processMouse(int eventType, const EmscriptenMouseEven
     return true;
 }
 
-int QWasmEventTranslator::focus_cb(int /*eventType*/, const EmscriptenFocusEvent */*focusEvent*/, void */*userData*/)
+int QWasmEventTranslator::focus_cb(int eventType, const EmscriptenFocusEvent */*focusEvent*/, void *userData)
 {
+    switch (eventType) {
+    case EMSCRIPTEN_EVENT_FOCUSOUT: {
+        auto window = QGuiApplication::focusWindow();
+        auto translator = reinterpret_cast<QWasmEventTranslator *>(userData);
+        if (window && window->screen() == translator->screen()->screen()) {
+            QWindowSystemInterface::handleWindowActivated(nullptr);
+        }
+        return 1;
+    }
+    }
+
     return 0;
 }
 
