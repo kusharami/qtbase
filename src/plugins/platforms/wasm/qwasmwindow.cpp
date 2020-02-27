@@ -143,7 +143,7 @@ void QWasmWindow::setVisible(bool visible)
 
 QMargins QWasmWindow::frameMargins() const
 {
-    int border = hasTitleBar() ? 4. * (qreal(qt_defaultDpiX()) / 96.0) : 0;
+    int border = hasTitleBar() ? borderWidth() : 0;
     int titleBarHeight = hasTitleBar() ? titleHeight() : 0;
 
     QMargins margins;
@@ -233,12 +233,12 @@ void QWasmWindow::injectMouseReleased(const QPoint &local,
     invalidate();
 }
 
-int QWasmWindow::titleHeight() const
+int QWasmWindow::titleHeight()
 {
     return 18. * (qreal(qt_defaultDpiX()) / 96.0);//dpiScaled(18.);
 }
 
-int QWasmWindow::borderWidth() const
+int QWasmWindow::borderWidth()
 {
     return  4. * (qreal(qt_defaultDpiX()) / 96.0);// dpiScaled(4.);
 }

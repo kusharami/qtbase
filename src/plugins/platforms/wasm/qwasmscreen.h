@@ -72,6 +72,7 @@ public:
     void resizeMaximizedWindows();
     QWindow *topWindow() const;
     QWindow *topLevelAt(const QPoint &p) const override;
+    QRect availableGeometry() const override;
 
     void invalidateSize();
     void updateQScreenAndCanvasRenderSize();

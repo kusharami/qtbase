@@ -86,8 +86,8 @@ public:
     void injectMouseReleased(const QPoint &local,
                             Qt::MouseButton button, Qt::KeyboardModifiers mods);
 
-    int titleHeight() const;
-    int borderWidth() const;
+    static int titleHeight();
+    static int borderWidth();
     QRegion titleGeometry() const;
     QRegion resizeRegion() const;
     bool isPointOnTitle(QPoint point) const;

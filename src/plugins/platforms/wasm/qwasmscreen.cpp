@@ -162,6 +162,15 @@ void QWasmScreen::invalidateSize()
     m_geometry = QRect();
 }
 
+QRect QWasmScreen::availableGeometry() const
+{
+    auto rect = geometry();
+
+    rect.setTop(rect.top() + QWasmWindow::titleHeight());
+
+    return rect;
+}
+
 void QWasmScreen::setGeometry(const QRect &rect)
 {
     if (m_geometry == rect)
