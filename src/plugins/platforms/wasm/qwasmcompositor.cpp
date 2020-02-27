@@ -230,13 +230,18 @@ QWindow *QWasmCompositor::windowAt(QPoint globalPoint, int padding) const
 
     while (index >= 0) {
         const QWasmCompositedWindow &compositedWindow = m_compositedWindows[m_windowStack.at(index)];
-        //qDebug() << "windwAt testing" << compositedWindow.window <<
 
-        QRect geometry = compositedWindow.window->windowFrameGeometry()
-                         .adjusted(-padding, -padding, padding, padding);
+        if (compositedWindow.visible) {
+            auto window = compositedWindow.window->window();
+            auto localPoint = window->mapFromGlobal(globalPoint);
 
-        if (compositedWindow.visible && geometry.contains(globalPoint))
-            return m_windowStack.at(index)->window();
+            QRect geometry = window->frameGeometry();
+            geometry.moveTopLeft(geometry.topLeft() - window->position());
+            geometry = geometry.adjusted(-padding, -padding, padding, padding);
+
+            if (geometry.contains(localPoint))
+                return m_windowStack.at(index)->window();
+        }
         --index;
     }
 
