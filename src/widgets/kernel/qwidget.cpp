@@ -1256,7 +1256,9 @@ void QWidgetPrivate::create()
     QWidgetWindow *win = topData()->window;
     // topData() ensures the extra is created but does not ensure 'window' is non-null
     // in case the extra was already valid.
-    if (!win) {
+    if (win) {
+        topData()->initialScreenIndex = QGuiApplication::screens().indexOf(win->screen());
+    } else {
         createTLSysExtra();
         win = topData()->window;
     }
