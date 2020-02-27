@@ -863,6 +863,9 @@ int QWasmEventTranslator::focus_cb(int eventType, const EmscriptenFocusEvent */*
 {
     switch (eventType) {
     case EMSCRIPTEN_EVENT_FOCUSOUT: {
+        if (capturedWindow)
+            return 1;
+
         auto window = QGuiApplication::focusWindow();
         auto translator = reinterpret_cast<QWasmEventTranslator *>(userData);
         if (window && window->screen() == translator->screen()->screen()) {
