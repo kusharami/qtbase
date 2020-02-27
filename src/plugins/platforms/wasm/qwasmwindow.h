@@ -81,9 +81,9 @@ public:
     QWasmBackingStore *backingStore() const { return m_backingStore; }
     QWindow *window() const { return m_window; }
 
-    void injectMousePressed(const QPoint &local, const QPoint &global,
+    void injectMousePressed(const QPoint &local,
                             Qt::MouseButton button, Qt::KeyboardModifiers mods);
-    void injectMouseReleased(const QPoint &local, const QPoint &global,
+    void injectMouseReleased(const QPoint &local,
                             Qt::MouseButton button, Qt::KeyboardModifiers mods);
 
     int titleHeight() const;
@@ -105,9 +105,11 @@ public:
     bool setKeyboardGrabEnabled(bool) override { return false; }
     bool setMouseGrabEnabled(bool) override { return false; }
 
+    bool hasTitleBar() const;
+    bool isMouseResizable() const;
+
 protected:
     void invalidate();
-    bool hasTitleBar() const;
 
 protected:
     friend class QWasmScreen;

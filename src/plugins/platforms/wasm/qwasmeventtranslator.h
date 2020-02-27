@@ -82,7 +82,7 @@ private:
     bool processMouse(int eventType, const EmscriptenMouseEvent *mouseEvent);
     bool handleTouch(int eventType, const EmscriptenTouchEvent *touchEvent);
 
-    void ensureWindowCaptured(QWindow* window);
+    bool ensureWindowCaptured(QWindow* window);
     static void maybeReleaseCapturedWindow();
     static void enterWindow(QWindow* window, const QPoint &localPoint, const QPoint &globalPoint);
     static void leaveWindow(QWindow* window);

@@ -36,6 +36,7 @@
 
 #include <QtGui/qevent.h>
 #include <QtGui/qguiapplication.h>
+#include <private/qguiapplication_p.h>
 #include <qpa/qwindowsysteminterface.h>
 #include <QtCore/qglobal.h>
 #include <QtCore/qobject.h>
@@ -554,7 +555,7 @@ int QWasmEventTranslator::mouse_cb(int eventType, const EmscriptenMouseEvent *mo
     case EMSCRIPTEN_EVENT_MOUSELEAVE:
         accepted = translator->processMouseLeave();
         break;
-    default: 
+    default:
         if (capturedTranslator) {
             translator = capturedTranslator;
         } else {
@@ -647,8 +648,13 @@ bool QWasmEventTranslator::processMouseEnter(const EmscriptenMouseEvent *mouseEv
     if (mouseInWindow == window)
         return true;
 
-    if (!window->geometry().contains(globalPoint))
-        window = nullptr;
+    QPoint localPoint;
+    if (window) {
+        localPoint = window->mapFromGlobal(globalPoint);
+
+        if (!QRect(QPoint(), window->size()).contains(localPoint))
+            window = nullptr;
+    }
 
     if (mouseInWindow && !capturedWindow) {
         leaveWindow(mouseInWindow.data());
@@ -657,7 +663,6 @@ bool QWasmEventTranslator::processMouseEnter(const EmscriptenMouseEvent *mouseEv
     mouseInWindow = window;
 
     if (!capturedWindow && window) {
-        QPoint localPoint = window->mapFromGlobal(globalPoint);
         enterWindow(mouseInWindow.data(), localPoint, globalPoint);
     }
     return true;
@@ -683,17 +688,25 @@ bool QWasmEventTranslator::processMouseLeave()
     return true;
 }
 
-void QWasmEventTranslator::ensureWindowCaptured(QWindow *window)
+bool QWasmEventTranslator::ensureWindowCaptured(QWindow *window)
 {
     if (!capturedWindow)
     {
+        QWindow *modalWindow;
+        bool blocked = QGuiApplicationPrivate::instance()->isWindowBlocked(window, &modalWindow);
+        if (blocked)
+            return false;
+
         lastMouseInWindow = mouseInWindow;
         capturedWindow = window;
         capturedTranslator = this;
-        QWindowSystemInterface::handleWindowActivated(window);
+
+        window->requestActivate();
         if (window->windowState() == Qt::WindowNoState)
             window->raise();
     }
+
+    return true;
 }
 
 void QWasmEventTranslator::maybeReleaseCapturedWindow()
@@ -749,30 +762,30 @@ bool QWasmEventTranslator::processMouse(int eventType, const EmscriptenMouseEven
     QWasmWindow *htmlWindow = window2
         ? static_cast<QWasmWindow*>(window2->handle())
         : nullptr;
+
     switch (eventType) {
     case EMSCRIPTEN_EVENT_MOUSEDOWN:
     {
         if (!htmlWindow)
             return false;
 
+        if (!ensureWindowCaptured(window2))
+            return false;
+
         pressedButtons.setFlag(button);
 
-        ensureWindowCaptured(window2);
-
         if (button == Qt::LeftButton) {
-            if (!(htmlWindow->m_windowState & Qt::WindowFullScreen) && !(htmlWindow->m_windowState & Qt::WindowMaximized)) {
-                if (htmlWindow && htmlWindow->isPointOnTitle(globalPoint)) {
-                    draggedWindow = window2;
-                    resizePoint = globalPoint - window2->geometry().topLeft();
-                } else if (htmlWindow && htmlWindow->isPointOnResizeRegion(globalPoint)) {
-                    draggedWindow = window2;
-                    resizeMode = htmlWindow->resizeModeAtPoint(globalPoint);
-                    resizePoint = globalPoint;
-                    resizeStartRect = window2->geometry();
-                }
+            if (htmlWindow->isPointOnTitle(localPoint)) {
+                draggedWindow = window2;
+                resizePoint = globalPoint - window2->mapToGlobal(QPoint(0, 0));
+            } else if (htmlWindow->isPointOnResizeRegion(localPoint)) {
+                draggedWindow = window2;
+                resizeMode = htmlWindow->resizeModeAtPoint(localPoint);
+                resizePoint = globalPoint;
+                resizeStartRect = window2->geometry();
             }
         }
-        htmlWindow->injectMousePressed(localPoint, globalPoint, button, modifiers);
+        htmlWindow->injectMousePressed(localPoint, button, modifiers);
 
         if (draggedWindow)
             return true;
@@ -796,7 +809,7 @@ bool QWasmEventTranslator::processMouse(int eventType, const EmscriptenMouseEven
             resizeMode = QWasmWindow::ResizeNone;
         }
 
-        htmlWindow->injectMouseReleased(localPoint, globalPoint, button, modifiers);
+        htmlWindow->injectMouseReleased(localPoint, button, modifiers);
         maybeReleaseCapturedWindow();
 
         if (wasDragged)
@@ -807,7 +820,7 @@ bool QWasmEventTranslator::processMouse(int eventType, const EmscriptenMouseEven
     }
     case EMSCRIPTEN_EVENT_MOUSEMOVE: // drag event
     {
-        if (draggedWindow || !window || !window->geometry().contains(globalPoint)) {
+        if (draggedWindow || !window || !QRect(QPoint(), window->size()).contains(localPoint)) {
             window = nullptr;
         }
 
@@ -816,7 +829,7 @@ bool QWasmEventTranslator::processMouse(int eventType, const EmscriptenMouseEven
                 leaveWindow(mouseInWindow.data());
 
             if (window)
-                enterWindow(window, localPoint, globalPoint);                
+                enterWindow(window, localPoint, globalPoint);
         }
 
         mouseInWindow = window;
@@ -824,7 +837,7 @@ bool QWasmEventTranslator::processMouse(int eventType, const EmscriptenMouseEven
         if (draggedWindow) {
             QPoint delta = globalPoint - resizePoint;
             if (resizeMode == QWasmWindow::ResizeNone) {
-                draggedWindow->setPosition(delta);
+                draggedWindow->setPosition(draggedWindow->mapFromGlobal(delta) + draggedWindow->position());
             } else {
                 resizeWindow(draggedWindow, resizeMode, resizeStartRect, delta);
             }
@@ -971,7 +984,8 @@ bool QWasmEventTranslator::handleTouch(int eventType, const EmscriptenTouchEvent
 
         switch (eventType) {
         case EMSCRIPTEN_EVENT_TOUCHSTART:
-            ensureWindowCaptured(window2);
+            if (!ensureWindowCaptured(window2))
+                break;
 
             if (tp != pressedTouchIds.constEnd()) {
                 touchPoint.state = (stationaryTouchPoint
@@ -985,13 +999,15 @@ bool QWasmEventTranslator::handleTouch(int eventType, const EmscriptenTouchEvent
             break;
         case EMSCRIPTEN_EVENT_TOUCHEND:
             if (!capturedWindow || tp == pressedTouchIds.constEnd())
-                return false;
+                break;
 
             touchPoint.state = Qt::TouchPointReleased;
             pressedTouchIds.remove(touchPoint.id);
             maybeReleaseCapturedWindow();
             break;
         case EMSCRIPTEN_EVENT_TOUCHMOVE:
+            if (!capturedWindow)
+                break;
             touchPoint.state = (stationaryTouchPoint
                                 ? Qt::TouchPointStationary
                                 : Qt::TouchPointMoved);
@@ -1004,6 +1020,9 @@ bool QWasmEventTranslator::handleTouch(int eventType, const EmscriptenTouchEvent
 
         touchPointList.append(touchPoint);
     }
+
+    if (!capturedWindow)
+        return false;
 
     QFlags<Qt::KeyboardModifier> keyModifier = translatKeyModifier(touchEvent);
 

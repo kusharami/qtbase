@@ -179,7 +179,7 @@ void QWasmWindow::propagateSizeHints()
 // get rid of base class warning
 }
 
-void QWasmWindow::injectMousePressed(const QPoint &local, const QPoint &global,
+void QWasmWindow::injectMousePressed(const QPoint &local,
                                       Qt::MouseButton button, Qt::KeyboardModifiers mods)
 {
     Q_UNUSED(local);
@@ -187,6 +187,8 @@ void QWasmWindow::injectMousePressed(const QPoint &local, const QPoint &global,
 
     if (!hasTitleBar() || button != Qt::LeftButton)
         return;
+
+    auto global = local + window()->position();
 
     if (maxButtonRect().contains(global))
         m_activeControl = QWasmCompositor::SC_TitleBarMaxButton;
@@ -200,7 +202,7 @@ void QWasmWindow::injectMousePressed(const QPoint &local, const QPoint &global,
     invalidate();
 }
 
-void QWasmWindow::injectMouseReleased(const QPoint &local, const QPoint &global,
+void QWasmWindow::injectMouseReleased(const QPoint &local,
                                        Qt::MouseButton button, Qt::KeyboardModifiers mods)
 {
     Q_UNUSED(local);
@@ -208,6 +210,8 @@ void QWasmWindow::injectMouseReleased(const QPoint &local, const QPoint &global,
 
     if (!hasTitleBar() || button != Qt::LeftButton)
         return;
+
+    auto global = local + window()->position();
 
     if (closeButtonRect().contains(global) && m_activeControl == QWasmCompositor::SC_TitleBarCloseButton) {
         window()->close();
@@ -264,17 +268,27 @@ QRegion QWasmWindow::resizeRegion() const
 
 bool QWasmWindow::isPointOnTitle(QPoint point) const
 {
-    bool ok = hasTitleBar() && titleGeometry().contains(point);
-    return ok;
+    if (!hasTitleBar())
+        return false;
+
+    point += window()->position();
+
+    return titleGeometry().contains(point);
 }
 
 bool QWasmWindow::isPointOnResizeRegion(QPoint point) const
 {
+    if (!isMouseResizable())
+        return false;
+
+    point += window()->position();
     return resizeRegion().contains(point);
 }
 
 QWasmWindow::ResizeMode QWasmWindow::resizeModeAtPoint(QPoint point) const
 {
+    point += window()->position();
+
     QPoint p1 = window()->frameGeometry().topLeft() - QPoint(5, 5);
     QPoint p2 = window()->frameGeometry().bottomRight() + QPoint(5, 5);
     int corner = 20;
@@ -409,7 +423,7 @@ void QWasmWindow::requestActivateWindow()
 {
     if (QGuiApplication::focusWindow() == window())
         return;
-    
+
     QPlatformWindow::requestActivateWindow();
     using namespace emscripten;
     val document = val::global("document");
@@ -420,10 +434,21 @@ void QWasmWindow::requestActivateWindow()
 bool QWasmWindow::hasTitleBar() const
 {
     auto flags = window()->flags();
-    return !(m_windowState & Qt::WindowFullScreen)
-        && !flags.testFlag(Qt::ToolTip)
-        && flags.testFlag(Qt::WindowTitleHint)
-        && m_needsCompositor;
+    return m_needsCompositor &&
+        !(m_windowState & Qt::WindowFullScreen)
+        && flags.testFlag(Qt::Window)
+        && !flags.testFlag(Qt::Popup)
+        && flags.testFlag(Qt::WindowTitleHint);
+}
+
+bool QWasmWindow::isMouseResizable() const
+{
+    auto flags = window()->flags();
+    return m_needsCompositor
+        && !(m_windowState & Qt::WindowFullScreen)
+        && !(m_windowState & Qt::WindowMaximized)
+        && flags.testFlag(Qt::Window)
+        && !flags.testFlag(Qt::Popup);
 }
 
 QT_END_NAMESPACE
