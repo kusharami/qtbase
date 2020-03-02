@@ -628,13 +628,11 @@ void resizeWindow(QWindow *window, QWasmWindow::ResizeMode mode,
 
 void QWasmEventTranslator::leaveWindow(QWindow *window)
 {
-    qDebug() << "Leave" << window;
     QWindowSystemInterface::handleLeaveEvent<QWindowSystemInterface::SynchronousDelivery>(window);
 }
 
 void QWasmEventTranslator::enterWindow(QWindow *window, const QPoint &localPoint, const QPoint &globalPoint)
 {
-    qDebug() << "Enter" << window;
     QWindowSystemInterface::handleEnterEvent<QWindowSystemInterface::SynchronousDelivery>(window, localPoint, globalPoint);
 }
 
@@ -1217,7 +1215,7 @@ bool QWasmEventTranslator::processKeyboard(int eventType, const EmscriptenKeyboa
     }
     if (keyType == QEvent::KeyPress &&
             mods.testFlag(Qt::ControlModifier)
-            && qtKey == Qt::Key_C) {
+            && (qtKey == Qt::Key_C || qtKey == Qt::Key_X)) {
         QWasmIntegration::get()->getWasmClipboard()->writeTextToClipboard();
     }
 
