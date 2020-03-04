@@ -678,8 +678,9 @@ void QWasmCompositor::drawShadePanel(QWasmTitleBarOptions options, QPainter *pai
 
 void QWasmCompositor::drawWindow(QOpenGLTextureBlitter *blitter, QWasmScreen *screen, QWasmWindow *window)
 {
-    if (window->hasTitleBar())
+    if (window->hasDecorations()) {
         drawWindowDecorations(blitter, screen, window);
+    }
     drawWindowContent(blitter, screen, window);
 }
 
@@ -724,7 +725,7 @@ void QWasmCompositor::frame()
     glViewport(0, 0, screen()->geometry().width() * dpr, screen()->geometry().height() * dpr);
 
     auto gl = m_context->functions();
-    gl->glClearColor(0.2, 0.2, 0.2, 1.0);
+    gl->glClearColor(0, 0, 0, 0);
     gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     m_blitter->bind();

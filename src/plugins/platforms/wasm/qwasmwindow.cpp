@@ -451,4 +451,12 @@ bool QWasmWindow::isMouseResizable() const
         && !flags.testFlag(Qt::Popup);
 }
 
+bool QWasmWindow::hasDecorations() const
+{
+    if (hasTitleBar())
+        return true;
+
+    return !(m_windowState & Qt::WindowFullScreen) && !window()->flags().testFlag(Qt::FramelessWindowHint);
+}
+
 QT_END_NAMESPACE

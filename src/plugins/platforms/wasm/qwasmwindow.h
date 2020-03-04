@@ -105,6 +105,7 @@ public:
     bool setKeyboardGrabEnabled(bool) override { return false; }
     bool setMouseGrabEnabled(bool) override { return false; }
 
+    bool hasDecorations() const;
     bool hasTitleBar() const;
     bool isMouseResizable() const;
 
