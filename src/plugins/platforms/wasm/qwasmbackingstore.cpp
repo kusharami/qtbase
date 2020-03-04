@@ -166,7 +166,7 @@ void QWasmBackingStore::resize(const QSize &size, const QRegion &staticContents)
 {
     Q_UNUSED(staticContents)
 
-    m_image = QImage(size * window()->devicePixelRatio(), QImage::Format_RGB32);
+    m_image = QImage(size * window()->devicePixelRatio(), QImage::Format_ARGB32_Premultiplied);
     m_image.setDevicePixelRatio(window()->devicePixelRatio());
     m_recreateTexture = true;
 }

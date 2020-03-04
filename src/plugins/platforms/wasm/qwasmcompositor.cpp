@@ -678,7 +678,7 @@ void QWasmCompositor::drawShadePanel(QWasmTitleBarOptions options, QPainter *pai
 
 void QWasmCompositor::drawWindow(QOpenGLTextureBlitter *blitter, QWasmScreen *screen, QWasmWindow *window)
 {
-    if (window->window()->type() != Qt::Popup && !(window->m_windowState & Qt::WindowFullScreen))
+    if (window->hasTitleBar())
         drawWindowDecorations(blitter, screen, window);
     drawWindowContent(blitter, screen, window);
 }
@@ -723,11 +723,15 @@ void QWasmCompositor::frame()
     qreal dpr = screen()->devicePixelRatio();
     glViewport(0, 0, screen()->geometry().width() * dpr, screen()->geometry().height() * dpr);
 
-    m_context->functions()->glClearColor(0.2, 0.2, 0.2, 1.0);
-    m_context->functions()->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    auto gl = m_context->functions();
+    gl->glClearColor(0.2, 0.2, 0.2, 1.0);
+    gl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     m_blitter->bind();
     m_blitter->setRedBlueSwizzle(true);
+
+    gl->glEnable(GL_BLEND);
+    gl->glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
     for (QWasmWindow *window : qAsConst(m_windowStack)) {
         QWasmCompositedWindow &compositedWindow = m_compositedWindows[window];
@@ -737,6 +741,8 @@ void QWasmCompositor::frame()
 
         drawWindow(m_blitter.data(), screen(), window);
     }
+
+    gl->glDisable(GL_BLEND);
 
     m_blitter->release();
 
