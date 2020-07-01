@@ -559,7 +559,7 @@ int QWasmEventTranslator::mouse_cb(int eventType, const EmscriptenMouseEvent *mo
         if (capturedTranslator) {
             translator = capturedTranslator;
         } else {
-            translator = mouseInTranslator;
+            translator = mouseInWindow ? mouseInTranslator : nullptr;
         }
         if (translator) {
             accepted = translator->processMouse(eventType, mouseEvent);
@@ -716,7 +716,7 @@ void QWasmEventTranslator::maybeReleaseCapturedWindow()
 
 void QWasmEventTranslator::releaseIfCapturedWindow(QWasmWindow* window)
 {
-    if (capturedWindow && capturedWindow->handle() == window) {
+    if (window && capturedWindow == window->window()) {
         releaseCapturedWindow();
     }
 }
@@ -805,6 +805,10 @@ bool QWasmEventTranslator::processMouse(int eventType, const EmscriptenMouseEven
         if (draggedWindow && button == Qt::LeftButton) {
             draggedWindow.clear();
             resizeMode = QWasmWindow::ResizeNone;
+        }
+
+        if (capturedWindow) {
+            capturedWindow->requestActivate();
         }
 
         htmlWindow->injectMouseReleased(localPoint, button, modifiers);
