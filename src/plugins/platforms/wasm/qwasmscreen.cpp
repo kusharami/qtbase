@@ -191,6 +191,13 @@ void QWasmScreen::updateQScreenAndCanvasRenderSize()
     // Setting the render size to a value larger than the CSS size enables high-dpi
     // rendering.
 
+    val document = val::global("document");
+    val canvas = document.call<val>("getElementById", QWasmString::fromQString(m_canvasId));
+
+    if (canvas.isUndefined() || canvas.isNull()) {
+        return;
+    }
+
     QByteArray canvasId = m_canvasId.toUtf8();
     double css_width;
     double css_height;
@@ -198,9 +205,6 @@ void QWasmScreen::updateQScreenAndCanvasRenderSize()
     QSizeF cssSize(css_width, css_height);
 
     QSizeF canvasSize = cssSize * devicePixelRatio();
-    val document = val::global("document");
-    val canvas = document.call<val>("getElementById", QWasmString::fromQString(m_canvasId));
-
     canvas.set("width", canvasSize.width());
     canvas.set("height", canvasSize.height());
 
