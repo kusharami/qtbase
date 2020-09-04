@@ -87,7 +87,7 @@ void QWasmFontDatabase::releaseHandle(void *handle)
 
 QFont QWasmFontDatabase::defaultFont() const
 {
-    return QFont(QLatin1String("Bitstream Vera Sans"));
+    return QFont(QLatin1String("Bitstream Vera Sans"), 10);
 }
 
 QT_END_NAMESPACE
